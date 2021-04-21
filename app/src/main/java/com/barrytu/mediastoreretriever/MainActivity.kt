@@ -22,8 +22,10 @@ class MainActivity : AppCompatActivity() {
 
     fun loadMediaItem() {
         if (haveStoragePermission()) {
-            val retriever = PhotoRetriever(contentResolver)
-            retriever.scanItem()
+            val photoRetriever = PhotoRetriever(contentResolver)
+            val videoRetriever = VideoRetriever(contentResolver)
+            photoRetriever.scanItem()
+            videoRetriever.scanItem()
         } else {
             requestPermission()
         }
