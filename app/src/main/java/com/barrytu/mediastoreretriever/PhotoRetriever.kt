@@ -27,9 +27,11 @@ class PhotoRetriever(val contentResolver: ContentResolver) {
         )
 
         val orderBy = "DATE_MODIFIED DESC"
+
         val where = MediaStore.Images.Media.DATE_ADDED + ">" + 0
+
         val cursor = contentResolver.query(uri, columns, where, null, orderBy)
-        Log.e("uri::", "scan")
+
         if (cursor != null && cursor.moveToFirst()) {
             do {
                 val id              = cursor.getLong(cursor.getColumnIndex(MediaStore.Images.Media._ID))

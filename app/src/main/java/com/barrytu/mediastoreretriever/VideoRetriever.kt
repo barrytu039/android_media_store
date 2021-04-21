@@ -22,13 +22,16 @@ class VideoRetriever(val contentResolver: ContentResolver) {
                 MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
                 MediaStore.Video.Media.WIDTH,
                 MediaStore.Video.Media.HEIGHT,
-                MediaStore.Video.Media.DATE_ADDED
+                MediaStore.Video.Media.DATE_ADDED,
+                MediaStore.Video.Media.DURATION
         )
 
         val orderBy = "DATE_MODIFIED DESC"
+
         val where = MediaStore.Video.Media.DATE_ADDED + ">" + 0
+
         val cursor = contentResolver.query(uri, columns, where, null, orderBy)
-        Log.e("uri::", "scan")
+
         if (cursor != null && cursor.moveToFirst()) {
             do {
                 val id              = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media._ID))
@@ -42,8 +45,9 @@ class VideoRetriever(val contentResolver: ContentResolver) {
                 val modifierTime    = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)) * 1000L
                 val takenTime       = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DATE_TAKEN))
                 val mimeType        = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.MIME_TYPE))
-                val imageUri        = ContentUris.withAppendedId(uri, id)
-                Log.e("uri::", imageUri.toString())
+                val duration        = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION)) * 1000L
+                val videoUri        = ContentUris.withAppendedId(uri, id)
+                Log.e("uri::", videoUri.toString())
             } while (cursor.moveToNext())
             cursor.close()
         }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
@@ -56,9 +57,11 @@ class MainActivity : AppCompatActivity() {
         when(requestCode) {
             READ_EXTERNAL_STORAGE_REQUEST -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PERMISSION_GRANTED) {
+                    // permission granted
                     loadMediaItem()
                 } else {
-                    // not granted permission
+                    // permission dined
+                    Toast.makeText(this, "Permission Dined!", Toast.LENGTH_SHORT).show()
                 }
             }
         }
