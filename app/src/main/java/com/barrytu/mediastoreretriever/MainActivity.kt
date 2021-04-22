@@ -4,29 +4,37 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 private const val READ_EXTERNAL_STORAGE_REQUEST = 1045
 
 class MainActivity : AppCompatActivity() {
+
+    val viewModel : MainViewModel by lazy {
+        ViewModelProvider(this).get(MainViewModel::class.java)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         loadMediaItem()
-
-
     }
 
     fun loadMediaItem() {
         if (haveStoragePermission()) {
-            val photoRetriever = PhotoRetriever(contentResolver)
-            val videoRetriever = VideoRetriever(contentResolver)
-            photoRetriever.scanItem()
-            videoRetriever.scanItem()
+            lifecycleScope.launch {
+                AppApplication.mediaRetriever.scanMediaItem()
+            }
         } else {
             requestPermission()
         }
