@@ -1,10 +1,9 @@
 package com.barrytu.mediastoreretriever
 
 import android.content.ContentResolver
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import android.net.Uri
+import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.*
 
 class MediaRetriever() {
 
@@ -12,18 +11,20 @@ class MediaRetriever() {
 
     private var videoRetriever : VideoRetriever
 
+    val mediaMutableLiveData : MutableLiveData<List<Uri>> = MutableLiveData()
+
     init {
         photoRetriever = PhotoRetriever(AppApplication.getAppContext().contentResolver)
         videoRetriever = VideoRetriever(AppApplication.getAppContext().contentResolver)
     }
 
     suspend fun scanMediaItem() = withContext(Dispatchers.IO) {
-        launch{
-            photoRetriever.scanItem()
-        }
-        launch{
-            videoRetriever.scanItem()
-        }
+        val photoUris = async { photoRetriever.scanItem() }
+        val videoUris = async { videoRetriever.scanItem() }
+        val mediaUris = mutableListOf<Uri>()
+        mediaUris.addAll(photoUris.await())
+        mediaUris.addAll(videoUris.await())
+        mediaMutableLiveData.postValue(mediaUris)
     }
 
 }

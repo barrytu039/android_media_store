@@ -2,12 +2,15 @@ package com.barrytu.mediastoreretriever
 
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 
 class VideoRetriever(val contentResolver: ContentResolver) {
 
-    fun scanItem() {
+    fun scanItem() : MutableList<Uri> {
+
+        val uriMutableList = mutableListOf<Uri>()
 
         val uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
 
@@ -47,10 +50,11 @@ class VideoRetriever(val contentResolver: ContentResolver) {
                 val mimeType        = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.MIME_TYPE))
                 val duration        = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION)) * 1000L
                 val videoUri        = ContentUris.withAppendedId(uri, id)
-                Log.e("uri::", videoUri.toString())
+                uriMutableList.add(videoUri)
             } while (cursor.moveToNext())
             cursor.close()
         }
+        return uriMutableList
     }
 
 }

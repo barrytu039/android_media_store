@@ -4,11 +4,13 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.GlobalScope
@@ -28,6 +30,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         loadMediaItem()
+        AppApplication.mediaRetriever.mediaMutableLiveData.observe(this, {
+            it.onEach { uri ->
+                Log.e("data::", uri.toString())
+            }
+        })
     }
 
     fun loadMediaItem() {

@@ -2,12 +2,15 @@ package com.barrytu.mediastoreretriever
 
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 
 class PhotoRetriever(val contentResolver: ContentResolver) {
 
-    fun scanItem() {
+    fun scanItem() : MutableList<Uri> {
+
+        val uriMutableList = mutableListOf<Uri>()
 
         val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
@@ -47,10 +50,11 @@ class PhotoRetriever(val contentResolver: ContentResolver) {
                 val mimeType        = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
                 val orientation     = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.Media.ORIENTATION))
                 val imageUri        = ContentUris.withAppendedId(uri, id)
-                Log.e("uri::", imageUri.toString())
+                uriMutableList.add(imageUri)
             } while (cursor.moveToNext())
             cursor.close()
         }
+        return uriMutableList
     }
 
 }
