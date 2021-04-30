@@ -8,9 +8,9 @@ import android.util.Log
 
 class VideoRetriever(val contentResolver: ContentResolver) {
 
-    fun scanItem() : MutableList<Uri> {
+    fun scanItem() : MutableList<MediaEntity> {
 
-        val uriMutableList = mutableListOf<Uri>()
+        val uriMutableList = mutableListOf<MediaEntity>()
 
         val uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
 
@@ -50,7 +50,7 @@ class VideoRetriever(val contentResolver: ContentResolver) {
                 val mimeType        = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.MIME_TYPE))
                 val duration        = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION)) * 1000L
                 val videoUri        = ContentUris.withAppendedId(uri, id)
-                uriMutableList.add(videoUri)
+                uriMutableList.add(MediaEntity(videoUri, id, name, mimeType, modifierTime, addedTime))
             } while (cursor.moveToNext())
             cursor.close()
         }

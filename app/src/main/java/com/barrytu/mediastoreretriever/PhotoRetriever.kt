@@ -8,9 +8,9 @@ import android.util.Log
 
 class PhotoRetriever(val contentResolver: ContentResolver) {
 
-    fun scanItem() : MutableList<Uri> {
+    fun scanItem() : MutableList<MediaEntity> {
 
-        val uriMutableList = mutableListOf<Uri>()
+        val uriMutableList = mutableListOf<MediaEntity>()
 
         val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
@@ -50,7 +50,7 @@ class PhotoRetriever(val contentResolver: ContentResolver) {
                 val mimeType        = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE))
                 val orientation     = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.Media.ORIENTATION))
                 val imageUri        = ContentUris.withAppendedId(uri, id)
-                uriMutableList.add(imageUri)
+                uriMutableList.add(MediaEntity(imageUri, id, name, mimeType, modifierTime, addedTime))
             } while (cursor.moveToNext())
             cursor.close()
         }

@@ -1,40 +1,134 @@
 package com.barrytu.mediastoreretriever
 
 import android.Manifest
+import android.app.RecoverableSecurityException
+import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
+import android.media.MediaScannerConnection
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.widget.TextView
+import android.os.FileUtils
+import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
-import androidx.lifecycle.Observer
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.GlobalScope
+import androidx.recyclerview.widget.GridLayoutManager
+import com.barrytu.mediastoreretriever.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
-private const val READ_EXTERNAL_STORAGE_REQUEST = 1045
+private const val READ_EXTERNAL_STORAGE_REQUEST = 1001
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, MediaBottomSheetDialogFragment.MediaBottomSheetInterface {
+
+    lateinit var binding : ActivityMainBinding
+
+    val mediaAdapter : MediaAdapter by lazy {
+        MediaAdapter(this)
+    }
 
     val viewModel : MainViewModel by lazy {
         ViewModelProvider(this).get(MainViewModel::class.java)
     }
 
+    private val registerDeleteResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+        if (it.resultCode == RESULT_OK) {
+            it.data?.clipData?.let { clip ->
+                for (i in 0..clip.itemCount) {
+                    contentResolver.delete(clip.getItemAt(i).uri, null, null)
+                }
+            } ?: {
+                it.data?.data?.let { uri ->
+                    contentResolver.delete(uri, null, null)
+                }
+            }
+//            it.data?.
+////            viewModel.selectedEntity?.let { entity ->
+////                contentResolver.delete(entity.uri, null, null)
+////            }
+
+            loadMediaItem()
+        }
+    }
+
+    private val registerCopyResultLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) {
+        it?.let {
+            DocumentFile.fromTreeUri(this, it)?.let {
+                try {
+                    viewModel.selectedEntity?.let { selectedItem ->
+                        val toFile = it.createFile(selectedItem.mimeType, selectedItem.name)
+                        val inputStream = contentResolver.openInputStream(selectedItem.uri)
+                        toFile?.let { toDocFile ->
+                            val outputStream = contentResolver.openOutputStream(toDocFile.uri)
+                            if (inputStream != null && outputStream != null) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    if (FileUtils.copy(inputStream, outputStream) > 0) {
+                                        loadMediaItem()
+                                    }
+                                } else {
+                                    val buffer = ByteArray(1024)
+                                    try {
+                                        while (true) {
+                                            val length = inputStream.read(buffer)
+                                            if (length == -1) {
+                                                break
+                                            }
+                                            outputStream.write(buffer, 0, length)
+                                        }
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    } finally {
+                                        outputStream.flush()
+                                        outputStream.close()
+                                        inputStream.close()
+                                    }
+                                    lifecycleScope.launch(Dispatchers.IO) {
+                                        // todo : temp to delay scan after write new media file
+                                        delay(1000)
+                                        loadMediaItem()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         loadMediaItem()
         AppApplication.mediaRetriever.mediaMutableLiveData.observe(this, {
-            it.onEach { uri ->
-                Log.e("data::", uri.toString())
+            if (it.isNullOrEmpty()) {
+
+            } else {
+                mediaAdapter.setDataSet(it)
             }
         })
+        binding.mediaRecyclerView.apply {
+            adapter = mediaAdapter
+            layoutManager = GridLayoutManager(
+                this@MainActivity,
+                4,
+                GridLayoutManager.VERTICAL,
+                false
+            )
+            setHasFixedSize(true)
+        }
     }
 
     fun loadMediaItem() {
@@ -80,5 +174,64 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onItemClick(position: Int) {
+        viewModel.selectedEntity = mediaAdapter.mediaItems[position]
+        // popup function option sheet
+        MediaBottomSheetDialogFragment().show(supportFragmentManager, "MediaBottomSheetDialogFragment")
+    }
+
+    fun deleteMedia() {
+        viewModel.selectedEntity?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    contentResolver.delete(it.uri, null, null)
+                    loadMediaItem()
+                } catch (e: RecoverableSecurityException) {
+                    val intentSender = e.userAction.actionIntent.intentSender
+                    registerDeleteResultLauncher.launch(
+                        IntentSenderRequest.Builder(intentSender).build()
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } else {
+                try {
+                    contentResolver.delete(it.uri, null, null)
+                    loadMediaItem()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    fun deleteMedias(uris: List<Uri>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val pi = MediaStore.createDeleteRequest(contentResolver, uris);
+            registerDeleteResultLauncher.launch(IntentSenderRequest.Builder(pi).build())
+        } else {
+            for (uri in uris) {
+                contentResolver.delete(uri, null, null)
+            }
+            loadMediaItem()
+        }
+    }
+
+    fun copyMedia() {
+        viewModel.selectedEntity?.let { mediaEntity ->
+            registerCopyResultLauncher.launch(mediaEntity.uri)
+        }
+    }
+
+    override fun onDelete() {
+        // delete media
+        deleteMedia()
+    }
+
+    override fun onCopy() {
+        // copy media
+        copyMedia()
     }
 }
