@@ -20,6 +20,7 @@ import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.observe
 import androidx.recyclerview.widget.GridLayoutManager
 import com.barrytu.mediastoreretriever.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
@@ -42,21 +43,15 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
 
     private val registerDeleteResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
         if (it.resultCode == RESULT_OK) {
+            // permission granted
             it.data?.clipData?.let { clip ->
                 for (i in 0..clip.itemCount) {
                     contentResolver.delete(clip.getItemAt(i).uri, null, null)
                 }
-            } ?: {
-                it.data?.data?.let { uri ->
-                    contentResolver.delete(uri, null, null)
-                }
-            }
-//            it.data?.
-////            viewModel.selectedEntity?.let { entity ->
-////                contentResolver.delete(entity.uri, null, null)
-////            }
-
+            } ?: contentResolver.delete(requireNotNull(viewModel.selectedEntity?.uri), null, null)
             loadMediaItem()
+        } else {
+            // permission dined
         }
     }
 
@@ -112,13 +107,13 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         loadMediaItem()
-        AppApplication.mediaRetriever.mediaMutableLiveData.observe(this, {
+        AppApplication.mediaRetriever.mediaMutableLiveData.observe(this) {
             if (it.isNullOrEmpty()) {
 
             } else {
                 mediaAdapter.setDataSet(it)
             }
-        })
+        }
         binding.mediaRecyclerView.apply {
             adapter = mediaAdapter
             layoutManager = GridLayoutManager(
