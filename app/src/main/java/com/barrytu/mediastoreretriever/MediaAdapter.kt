@@ -1,6 +1,5 @@
 package com.barrytu.mediastoreretriever
 
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,9 +18,9 @@ class MediaAdapter(val mediaItemInterface: MediaItemInterface) : RecyclerView.Ad
     }
 
     inner class MediaViewHolder(itemView : View) : RecyclerView.ViewHolder(itemView) {
-        private var mediaImageView : ImageView
+        private var mediaImageView : ImageView = itemView.findViewById(R.id.itemMediaImageView)
+
         init {
-            mediaImageView = itemView.findViewById(R.id.itemMediaImageView)
             itemView.setOnClickListener {
                 mediaItemInterface.onItemClick(it.tag as Int)
             }

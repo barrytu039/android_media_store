@@ -10,7 +10,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class MediaBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
-    lateinit var binding : FragmentMediabuttomsheetBinding
+    private lateinit var binding : FragmentMediabuttomsheetBinding
 
     private var mediaBottomSheetInterface : MediaBottomSheetInterface? = null
 

@@ -2,9 +2,7 @@ package com.barrytu.mediastoreretriever
 
 import android.Manifest
 import android.app.RecoverableSecurityException
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -31,13 +29,13 @@ private const val READ_EXTERNAL_STORAGE_REQUEST = 1001
 
 class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, MediaBottomSheetDialogFragment.MediaBottomSheetInterface {
 
-    lateinit var binding : ActivityMainBinding
+    private lateinit var binding : ActivityMainBinding
 
-    val mediaAdapter : MediaAdapter by lazy {
+    private val mediaAdapter : MediaAdapter by lazy {
         MediaAdapter(this)
     }
 
-    val viewModel : MainViewModel by lazy {
+    private val viewModel : MainViewModel by lazy {
         ViewModelProvider(this).get(MainViewModel::class.java)
     }
 
@@ -48,7 +46,10 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
                 for (i in 0..clip.itemCount) {
                     contentResolver.delete(clip.getItemAt(i).uri, null, null)
                 }
-            } ?: contentResolver.delete(requireNotNull(viewModel.selectedEntity?.uri), null, null)
+            }
+            it.data?.data?.let { uri ->
+                contentResolver.delete(uri, null, null)
+            }
             loadMediaItem()
         } else {
             // permission dined
@@ -126,7 +127,7 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
         }
     }
 
-    fun loadMediaItem() {
+    private fun loadMediaItem() {
         if (haveStoragePermission()) {
             lifecycleScope.launch {
                 AppApplication.mediaRetriever.scanMediaItem()
@@ -177,7 +178,7 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
         MediaBottomSheetDialogFragment().show(supportFragmentManager, "MediaBottomSheetDialogFragment")
     }
 
-    fun deleteMedia() {
+    private fun deleteMedia() {
         viewModel.selectedEntity?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 try {
@@ -202,9 +203,9 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
         }
     }
 
-    fun deleteMedias(uris: List<Uri>) {
+    private fun deleteMedias(uris: List<Uri>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val pi = MediaStore.createDeleteRequest(contentResolver, uris);
+            val pi = MediaStore.createDeleteRequest(contentResolver, uris)
             registerDeleteResultLauncher.launch(IntentSenderRequest.Builder(pi).build())
         } else {
             for (uri in uris) {
@@ -214,15 +215,16 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
         }
     }
 
-    fun copyMedia() {
+    private fun copyMedia() {
         viewModel.selectedEntity?.let { mediaEntity ->
             registerCopyResultLauncher.launch(mediaEntity.uri)
         }
     }
 
     override fun onDelete() {
-        // delete media
-        deleteMedia()
+        val uriMutableList = mutableListOf<Uri>()
+        uriMutableList.add(requireNotNull(viewModel.selectedEntity?.uri))
+        deleteMedias(uriMutableList)
     }
 
     override fun onCopy() {

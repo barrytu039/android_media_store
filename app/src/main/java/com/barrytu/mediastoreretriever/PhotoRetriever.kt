@@ -2,11 +2,9 @@ package com.barrytu.mediastoreretriever
 
 import android.content.ContentResolver
 import android.content.ContentUris
-import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 
-class PhotoRetriever(val contentResolver: ContentResolver) {
+class PhotoRetriever(private val contentResolver: ContentResolver) {
 
     fun scanItem() : MutableList<MediaEntity> {
 
