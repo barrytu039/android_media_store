@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
 
     private fun deleteMedia() {
         viewModel.selectedEntity?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
                     contentResolver.delete(it.uri, null, null)
                     loadMediaItem()
@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
     }
 
     private fun deleteMedias(uris: List<Uri>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val pi = MediaStore.createDeleteRequest(contentResolver, uris)
             registerDeleteResultLauncher.launch(IntentSenderRequest.Builder(pi).build())
         } else {
