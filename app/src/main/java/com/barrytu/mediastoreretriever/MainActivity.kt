@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.FileUtils
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.result.IntentSenderRequest
@@ -66,32 +65,26 @@ class MainActivity : AppCompatActivity(), MediaAdapter.MediaItemInterface, Media
                         toFile?.let { toDocFile ->
                             val outputStream = contentResolver.openOutputStream(toDocFile.uri)
                             if (inputStream != null && outputStream != null) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    if (FileUtils.copy(inputStream, outputStream) > 0) {
-                                        loadMediaItem()
-                                    }
-                                } else {
-                                    val buffer = ByteArray(1024)
-                                    try {
-                                        while (true) {
-                                            val length = inputStream.read(buffer)
-                                            if (length == -1) {
-                                                break
-                                            }
-                                            outputStream.write(buffer, 0, length)
+                                val buffer = ByteArray(1024)
+                                try {
+                                    while (true) {
+                                        val length = inputStream.read(buffer)
+                                        if (length == -1) {
+                                            break
                                         }
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    } finally {
-                                        outputStream.flush()
-                                        outputStream.close()
-                                        inputStream.close()
+                                        outputStream.write(buffer, 0, length)
                                     }
-                                    lifecycleScope.launch(Dispatchers.IO) {
-                                        // todo : temp to delay scan after write new media file
-                                        delay(1000)
-                                        loadMediaItem()
-                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                } finally {
+                                    outputStream.flush()
+                                    outputStream.close()
+                                    inputStream.close()
+                                }
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    // todo : temp to delay scan after write new media file
+                                    delay(1000)
+                                    loadMediaItem()
                                 }
                             }
                         }
